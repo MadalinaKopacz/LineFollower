@@ -11,7 +11,7 @@ int m2Speed = 0;
 
 
 // increase kp’s value and see what happens
-float kp = 10;
+float kp = 15;
 float ki = 0;
 float kd = 0;
 
@@ -71,12 +71,13 @@ void loop() {
   i = i + error;
   d = error - lastError;
 
+  m1Speed = baseSpeed;
+  m2Speed = baseSpeed;
+  
   pidControl(error);
   
   int motorSpeed = kp * p + ki * i + kd * d;  // = error in this case
 
-  m1Speed = baseSpeed;
-  m2Speed = baseSpeed;
 
   // a bit counter intuitive because of the signs
   // basically in the first if, you substract the error from m1Speed (you add the negative)
@@ -176,46 +177,26 @@ void customCalibrate() {
 }
 
 void pidControl(float error) {
-
   if (error >= -20 && error < -10) {
-    kd = 2.75;
+    kd = 10;
   }
   if (error >= -10 && error < -1) {
-    kd = 0.5;
+    kd = 7;
   }
   if (error >= -1 && error < 0) {
-    kd = 0.1;
+    kd = 2;
   }
   if (error >= 0 && error < 1) {
-    kd = -0.1;
+    kd = -2;
   }   
   if (error >= 1 && error < 10) {
-    kd = -0.5;
+    kd = -7;
   }
   if (error >= 10 && error < 20) {
-    kd = -2.75;
+    kd = -10;
   }
 
-  // if (error >= -20 && error < -10) {
-  //   kd = 2.75;
-  // }
-  // if (error >= -10 && error < -1) {
-  //   kd = 0.5;
-  // }
-  // if (error >= -1 && error < 0) {
-  //   kd = 0.1;
-  // }
-  // if (error >= 0 && error < 1) {
-  //   kd = -0.1;
-  // }   
-  // if (error >= 1 && error < 10) {
-  //   kd = -0.5;
-  // }
-  // if (error >= 10 && error < 20) {
-  //   kd = -2.75;
-  // }
-
-  // ki = 0.01;  
+  ki = 0.0045;  
 }
 
 
