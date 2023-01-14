@@ -311,3 +311,28 @@ void setMotorSpeed(int motor1Speed, int motor2Speed) {
     }
   }
 }
+
+// avem nevoie de corectari mai fine pt error
+// cand avem curbe sa compensan sin k
+// sa ne uitam la constrain la valori
+// de adaugat functii
+// functia de set motor speed trebuie modificata
+
+// -----------------------------
+
+
+// 1. calibrarea automata
+// 2. functia de la pid 
+// 3. tuning pe pid si viteza
+// 4. imbunatire cod
+
+// ----
+
+// 5. beautification
+// 6. de adaugat LCD
+// 7. ?buzzer?
+
+// ---
+//documentatie
+
+//locul de baterii 314, 10-15 min
