@@ -14,7 +14,7 @@ const int ledPinLeft = 13;
 int m1Speed = 0;
 int m2Speed = 0;
 
-float kp = 4.7;
+float kp = 4.5;
 float ki = 0;
 float kd = 0;
 
@@ -30,7 +30,7 @@ float pThreshold = 40;
 const int maxSpeed = 255;
 const int minSpeed = -255;
 
-const int baseSpeed = 200;
+const int baseSpeed = 190;
 
 const int calibrateSpeed = 50;
 const unsigned long calibrateTime = 250;
@@ -40,19 +40,23 @@ QTRSensors qtr;
 byte rightLedState = HIGH;
 byte leftLedState = HIGH;
 
-const int blinkDuration = 500;
+const int blinkDuration = 200;
 unsigned long blinkStartLeft = 0;
 unsigned long blinkStartRight = 0;
 
 
 const int sensorCount = 6;
 int sensorValues[sensorCount];
+
 int calibratedMinValues[sensorCount];
 int calibratedMaxValues[sensorCount];
+
 int sensors[sensorCount] = { 0, 0, 0, 0, 0, 0 };
 const unsigned short int sensorAddress[] = { 0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352 };
+
 byte buttonState = HIGH;
 bool buttonPressed = false;
+
 unsigned long lastDebounceTime = 0;
 unsigned int debounceDelay = 50;
 byte lastReading = LOW;
@@ -60,8 +64,6 @@ byte reading = LOW;
 
 
 void setup() {
-
-  // pinMode setup
   pinMode(buttonPin, INPUT_PULLUP);
   pinMode(m11Pin, OUTPUT);
   pinMode(m12Pin, OUTPUT);
@@ -84,11 +86,11 @@ void setup() {
   digitalWrite(ledPinRight, rightLedState);
 
   getSensorsValues();
-  // customCalibrate();
 
   digitalWrite(LED_BUILTIN, LOW);
   setMotorSpeed(0, 0);
 }
+
 
 void loop() {
   debounce();
@@ -96,17 +98,16 @@ void loop() {
   blink(rightLedState, blinkStartRight);
   blink(leftLedState, blinkStartLeft);
 
-  digitalWrite(ledPinLeft, leftLedState);
-  digitalWrite(ledPinRight, rightLedState);
-
   float error = map(qtr.readLineBlack(sensorValues), 0, 5000, -pThreshold, pThreshold);
 
   int motorSpeedDiff = pidControl(error);
 
   CalculateSpeed(error, motorSpeedDiff);
 
+  digitalWrite(ledPinLeft, leftLedState);
+  digitalWrite(ledPinRight, rightLedState);
+
   setMotorSpeed(m1Speed, m2Speed);
-  // debugging(error);  
 }
 
 void setMotorSpeed(int motor1Speed, int motor2Speed) {
@@ -144,18 +145,7 @@ void setMotorSpeed(int motor1Speed, int motor2Speed) {
   }
 }
 
-void debugging(int error) {
-  Serial.print("Error: ");
-  Serial.println(error);
-  Serial.print("M1 speed: ");
-  Serial.println(m1Speed);
-
-  Serial.print("M2 speed: ");
-  Serial.println(m2Speed);
-}
-
 void customCalibrate() {
-  Serial.println("Calibrating...");
   int ct = 0;
   int state = 0;
   while (ct <= 6) {
@@ -177,7 +167,7 @@ void customCalibrate() {
       }
     }
   }
-    putSensorsValues();
+  putSensorsValues();
 }
 
 int pidControl(float error) {
@@ -190,32 +180,27 @@ int pidControl(float error) {
   if (errorAbs >= 0 && errorAbs < 5) {
     kd = 5;
   }
-  if (errorAbs >= 5 && errorAbs < 15) {
-    kd = 4.5;
+  if (errorAbs >= 5 && errorAbs < 10) {
+    kd = 4;
+  }
+  if (errorAbs >= 10 && errorAbs < 15) {
+    kd = 5;
   }
   if (errorAbs >= 15 && errorAbs < 20) {
-    kd = 3;
-  } 
+    kd = 4.9;
+  }
   if (errorAbs >= 20 && errorAbs < 25) {
-    kd = 3.5;
-  } 
+    kd = 3.4;
+  }
   if (errorAbs >= 25 && errorAbs < 30) {
-    kd = 3;
-  } 
+    kd = 3.5;
+  }
   if (errorAbs >= 30 && errorAbs < 35) {
-    kd = 2.5;
-  } 
-   if (errorAbs >= 35 && errorAbs < 40) {
     kd = 2;
   }
-  if (errorAbs >= 40 && errorAbs < 45) {
+  if (errorAbs >= 35 && errorAbs < 40) {
     kd = 1.5;
   }
-  if (errorAbs >= 45 && errorAbs < 50) {
-    kd = 1;
-  }
-
-  ki = 0.00005;
 
   int motorSpeedDiff = kp * p + ki * i + kd * d;
 
@@ -240,17 +225,6 @@ void blink(byte &ledState, unsigned long &blinkStart) {
   if (millis() - blinkStart >= blinkDuration) {
     ledState = !ledState;
     blinkStart = millis();
-  }
-}
-
-void turn() {
-  if (m1Speed < 0) {
-    blink(leftLedState, blinkStartLeft);
-    rightLedState = HIGH;
-  }
-  if (m2Speed < 0) {
-    blink(rightLedState, blinkStartRight);
-    leftLedState = HIGH;
   }
 }
 
