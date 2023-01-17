@@ -13,7 +13,7 @@ const int ledPinLeft = 13;
 int m1Speed = 0;
 int m2Speed = 0;
 
-float kp = 10;
+float kp = 12;
 float ki = 0;
 float kd = 0;
 
@@ -172,16 +172,16 @@ int pidControl(float error) {
   i = i + error;
   d = error - lastError;
 
-  // if (errorAbs >= 0 && errorAbs < 5) {
-  //   kd = 20;
-  // }
-  // if (errorAbs >= 5 && errorAbs < 15) {
-  //   kd = 40;
-  // }  
-  // if (errorAbs >= 15 && errorAbs < 20) {
-  //   kd = 50;
-  // }
-  kd = 1;
+  if (errorAbs >= 0 && errorAbs < 5) {
+    kd = 3;
+  }
+  if (errorAbs >= 5 && errorAbs < 15) {
+    kd = 7.5;
+  }  
+  if (errorAbs >= 15 && errorAbs < 20) {
+    kd = 15;
+  }
+  // kd = 0;
   // ki = 0.01;
 
   int motorSpeedDiff = kp * p + ki * i + kd * d;
