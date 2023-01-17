@@ -173,7 +173,7 @@ void customCalibrate() {
       }
     }
   }
-  // qtr.read(sensorValues);
+  qtr.read(sensorValues);
   putSensorsValues();
 }
 
@@ -235,13 +235,13 @@ void turn() {
 
 void getSensorsValues() {
   for (int i = 0; i < 6; ++i) {
-    EEPROM.get(sensorAddress[i], sensorValues);
+    EEPROM.get(sensorAddress[i], sensorValues[i]);
   }
 }
 
 void putSensorsValues() {
   for (int i = 0; i < 6; ++i) {
-    EEPROM.put(sensorAddress[i], sensorValues);
+    EEPROM.put(sensorAddress[i], sensorValues[i]);
   }
 }
 
