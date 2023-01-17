@@ -1,15 +1,19 @@
 #include <QTRSensors.h>
+#include <EEPROM.h>
+
 const int m11Pin = 7;
 const int m12Pin = 6;
 const int m21Pin = 5;
 const int m22Pin = 4;
 const int m1Enable = 11;
 const int m2Enable = 10;
+const int ledPinRight = 12;
+const int ledPinLeft = 13;
 
 int m1Speed = 0;
 int m2Speed = 0;
 
-float kp = 15;
+float kp = 10;
 float ki = 0;
 float kd = 0;
 
@@ -32,9 +36,20 @@ const unsigned long calibrateTime = 250;
 const int calibrateMoves = 24;
 QTRSensors qtr;
 
+byte rightLedState = HIGH;
+byte leftLedState = HIGH;
+
+const int blinkDuration = 500;
+unsigned long blinkStartLeft = 0;
+unsigned long blinkStartRight = 0;
+
+
 const int sensorCount = 6;
 int sensorValues[sensorCount];
 int sensors[sensorCount] = { 0, 0, 0, 0, 0, 0 };
+const unsigned short int sensorAddress[] = { 0, 32, 64, 96, 128, 160 };
+
+
 void setup() {
 
   // pinMode setup
@@ -44,6 +59,8 @@ void setup() {
   pinMode(m22Pin, OUTPUT);
   pinMode(m1Enable, OUTPUT);
   pinMode(m2Enable, OUTPUT);
+  pinMode(ledPinRight, OUTPUT);
+  pinMode(ledPinLeft, OUTPUT);
 
   qtr.setTypeAnalog();
   qtr.setSensorPins((const uint8_t[]){ A0, A1, A2, A3, A4, A5 }, sensorCount);
@@ -52,13 +69,24 @@ void setup() {
   Serial.begin(9600);
 
   digitalWrite(LED_BUILTIN, HIGH);
+  
+  digitalWrite(ledPinLeft, leftLedState);
+  digitalWrite(ledPinRight, rightLedState);
+  
   customCalibrate();
 
   digitalWrite(LED_BUILTIN, LOW);
   setMotorSpeed(0, 0);
+
 }
 
 void loop() {
+  blink(rightLedState, blinkStartRight);
+  blink(leftLedState, blinkStartLeft);
+  
+  digitalWrite(ledPinLeft, leftLedState);
+  digitalWrite(ledPinRight,  rightLedState);
+  
   float error = map(qtr.readLineBlack(sensorValues), 0, 5000, -pThreshold, pThreshold);
 
   int motorSpeedDiff = pidControl(error);
@@ -138,30 +166,23 @@ void customCalibrate() {
 }
 
 int pidControl(float error) {
+  int errorAbs = abs(error);
+
   p = error;
   i = i + error;
   d = error - lastError;
 
-  if (error >= -20 && error < -10) {
-    kd = 10;
-  }
-  if (error >= -10 && error < -1) {
-    kd = 7;
-  }
-  if (error >= -1 && error < 0) {
-    kd = 2;
-  }
-  if (error >= 0 && error < 1) {
-    kd = -2;
-  }   
-  if (error >= 1 && error < 10) {
-    kd = -7;
-  }
-  if (error >= 10 && error < 20) {
-    kd = -10;
-  }
-
-  ki = 0.005;
+  // if (errorAbs >= 0 && errorAbs < 5) {
+  //   kd = 20;
+  // }
+  // if (errorAbs >= 5 && errorAbs < 15) {
+  //   kd = 40;
+  // }  
+  // if (errorAbs >= 15 && errorAbs < 20) {
+  //   kd = 50;
+  // }
+  kd = 1;
+  // ki = 0.01;
 
   int motorSpeedDiff = kp * p + ki * i + kd * d;
 
@@ -180,4 +201,22 @@ void CalculateSpeed(float error, int motorSpeedDiff) {
 
   m1Speed = constrain(m1Speed, minSpeed, maxSpeed);
   m2Speed = constrain(m2Speed, minSpeed, maxSpeed);
+}
+
+void blink(byte &ledState, unsigned long &blinkStart) {
+  if(millis() - blinkStart >= blinkDuration) {
+    ledState = !ledState;
+    blinkStart = millis();
+  }
+}
+
+void turn() {
+if(m1Speed < 0) {
+  blink(leftLedState, blinkStartLeft);
+  rightLedState = HIGH;
+}
+if(m2Speed < 0){
+  blink(rightLedState, blinkStartRight);
+  leftLedState = HIGH;
+}
 }
