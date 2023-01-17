@@ -47,8 +47,10 @@ unsigned long blinkStartRight = 0;
 
 const int sensorCount = 6;
 int sensorValues[sensorCount];
+int calibratedMinValues[sensorCount];
+int calibratedMaxValues[sensorCount];
 int sensors[sensorCount] = { 0, 0, 0, 0, 0, 0 };
-const unsigned short int sensorAddress[] = { 0, 32, 64, 96, 128, 160 };
+const unsigned short int sensorAddress[] = { 0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352 };
 byte buttonState = HIGH;
 bool buttonPressed = false;
 unsigned long lastDebounceTime = 0;
@@ -173,7 +175,6 @@ void customCalibrate() {
       }
     }
   }
-  qtr.read(sensorValues);
   putSensorsValues();
 }
 
@@ -234,14 +235,33 @@ void turn() {
 }
 
 void getSensorsValues() {
-  for (int i = 0; i < 6; ++i) {
-    EEPROM.get(sensorAddress[i], sensorValues[i]);
+  if (qtr.calibrationOn.initialized) {
+    return;
   }
+  uint16_t *oldMaximum = qtr.calibrationOn.maximum;
+  qtr.calibrationOn.maximum = (uint16_t *)realloc(qtr.calibrationOn.maximum, sizeof(uint16_t) * sensorCount);
+  if (qtr.calibrationOn.maximum == nullptr) {
+    free(oldMaximum);
+    return;
+  }
+
+  uint16_t *oldMinimum = qtr.calibrationOn.minimum;
+  qtr.calibrationOn.minimum = (uint16_t *)realloc(qtr.calibrationOn.minimum, sizeof(uint16_t) * sensorCount);
+  if (qtr.calibrationOn.minimum == nullptr) {
+    free(oldMinimum);
+    return;
+  }
+  for (int i = 0; i < 6; i++) {
+    EEPROM.get(sensorAddress[i * 2], qtr.calibrationOn.minimum[i]);
+    EEPROM.get(sensorAddress[i * 2 + 1], qtr.calibrationOn.maximum[i]);
+  }
+  qtr.calibrationOn.initialized = true;
 }
 
 void putSensorsValues() {
-  for (int i = 0; i < 6; ++i) {
-    EEPROM.put(sensorAddress[i], sensorValues[i]);
+  for (int i = 0; i < 6; i++) {
+    EEPROM.put(sensorAddress[i * 2], qtr.calibrationOn.minimum[i]);
+    EEPROM.put(sensorAddress[i * 2 + 1], qtr.calibrationOn.maximum[i]);
   }
 }
 
