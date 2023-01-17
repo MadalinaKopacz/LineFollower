@@ -14,7 +14,7 @@ const int ledPinLeft = 13;
 int m1Speed = 0;
 int m2Speed = 0;
 
-float kp = 5.9;
+float kp = 4.7;
 float ki = 0;
 float kd = 0;
 
@@ -30,7 +30,7 @@ float pThreshold = 40;
 const int maxSpeed = 255;
 const int minSpeed = -255;
 
-const int baseSpeed = 180;
+const int baseSpeed = 200;
 
 const int calibrateSpeed = 50;
 const unsigned long calibrateTime = 250;
@@ -83,8 +83,8 @@ void setup() {
   digitalWrite(ledPinLeft, leftLedState);
   digitalWrite(ledPinRight, rightLedState);
 
-  // getSensorsValues();
-  customCalibrate();
+  getSensorsValues();
+  // customCalibrate();
 
   digitalWrite(LED_BUILTIN, LOW);
   setMotorSpeed(0, 0);
@@ -188,65 +188,34 @@ int pidControl(float error) {
   d = error - lastError;
 
   if (errorAbs >= 0 && errorAbs < 5) {
-    kd = 3;
+    kd = 5;
   }
   if (errorAbs >= 5 && errorAbs < 15) {
-    kd = 7.5;
+    kd = 4.5;
   }
   if (errorAbs >= 15 && errorAbs < 20) {
-    kd = 3.5;
+    kd = 3;
   } 
   if (errorAbs >= 20 && errorAbs < 25) {
-    kd = 2.7;
+    kd = 3.5;
   } 
   if (errorAbs >= 25 && errorAbs < 30) {
-    kd = 2.5;
+    kd = 3;
   } 
   if (errorAbs >= 30 && errorAbs < 35) {
-    kd = 2;
+    kd = 2.5;
   } 
    if (errorAbs >= 35 && errorAbs < 40) {
-    kd = 1.5;
+    kd = 2;
   }
   if (errorAbs >= 40 && errorAbs < 45) {
-    kd = 1.2;
+    kd = 1.5;
   }
   if (errorAbs >= 45 && errorAbs < 50) {
     kd = 1;
   }
 
-  // if (errorAbs >= 0 && errorAbs < 5) {
-  //   kd = 0.01;
-  // }    
-  // if (errorAbs >= 5 && errorAbs < 10) {
-  //   kd = 0.05;
-  // } 
-  // if (errorAbs >= 10 && errorAbs < 15) {
-  //   kd = 0.15;
-  // } 
-  // if (errorAbs >= 15 && errorAbs < 20) {
-  //   kd = 0.4;
-  // } 
-  // if (errorAbs >= 20 && errorAbs < 25) {
-  //   kd = 0.7;
-  // } 
-  // if (errorAbs >= 25 && errorAbs < 30) {
-  //   kd = 1.2;
-  // } 
-  // if (errorAbs >= 30 && errorAbs < 35) {
-  //   kd = 1.7;
-  // } 
-  //  if (errorAbs >= 35 && errorAbs < 40) {
-  //   kd = 2;
-  // }
-  // if (errorAbs >= 40 && errorAbs < 45) {
-  //   kd = 3;
-  // }
-  // if (errorAbs >= 45 && errorAbs < 50) {
-  //   kd = 5;
-  // }
-  // kd = 0;
-  // ki = 0.00005;
+  ki = 0.00005;
 
   int motorSpeedDiff = kp * p + ki * i + kd * d;
 
