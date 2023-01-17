@@ -9,25 +9,23 @@ const int m2Enable = 10;
 int m1Speed = 0;
 int m2Speed = 0;
 
-
-// increase kp’s value and see what happens
 float kp = 15;
 float ki = 0;
 float kd = 0;
 
-
-
-float p = 1;
+float p = 0;
 float i = 0;
 float d = 0;
 
 float error = 0;
 float lastError = 0;
 
+float pThreshold = 30;
+
 const int maxSpeed = 255;
 const int minSpeed = -255;
 
-const int baseSpeed = 110;
+const int baseSpeed = 255;
 
 const int calibrateSpeed = 50;
 const unsigned long calibrateTime = 250;
@@ -50,13 +48,10 @@ void setup() {
   qtr.setTypeAnalog();
   qtr.setSensorPins((const uint8_t[]){ A0, A1, A2, A3, A4, A5 }, sensorCount);
 
-  // delay(500);
   pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(9600);
 
-  digitalWrite(LED_BUILTIN, HIGH);  // turn on Arduino's LED to indicate we are in calibration mode
-  // Serial.println("Before custom");
-  // setMotorSpeed(100, 0);
+  digitalWrite(LED_BUILTIN, HIGH);
   customCalibrate();
 
   digitalWrite(LED_BUILTIN, LOW);
@@ -64,46 +59,17 @@ void setup() {
 }
 
 void loop() {
-  // inefficient code, written in loop. You must create separate functions
-  float error = map(qtr.readLineBlack(sensorValues), 0, 5000, -20, 20);
+  float error = map(qtr.readLineBlack(sensorValues), 0, 5000, -pThreshold, pThreshold);
 
-  p = error;
-  i = i + error;
-  d = error - lastError;
+  int motorSpeedDiff = pidControl(error);
 
-  m1Speed = baseSpeed;
-  m2Speed = baseSpeed;
-  
-  pidControl(error);
-  
-  int motorSpeed = kp * p + ki * i + kd * d;  // = error in this case
-
-
-  // a bit counter intuitive because of the signs
-  // basically in the first if, you substract the error from m1Speed (you add the negative)
-  // in the 2nd if you add the error to m2Speed (you substract the negative)
-  // it's just the way the values of the sensors and/or motors lined up
-  if (error < 0) {
-    m1Speed += motorSpeed;
-  } else if (error > 0) {
-    m2Speed -= motorSpeed;
-  }
-  // make sure it doesn't go past limits. You can use -255 instead of 0 if calibrated programmed properly.
-  // making sure we don't go out of bounds
-  // maybe the lower bound should be negative, instead of 0? This of what happens when making a steep turn
-  m1Speed = constrain(m1Speed, minSpeed, maxSpeed);
-  m2Speed = constrain(m2Speed, minSpeed, maxSpeed);
-
+  CalculateSpeed(error, motorSpeedDiff);
 
   setMotorSpeed(m1Speed, m2Speed);
   // debugging();
 }
 
-// each arguments takes values between -255 and 255. The negative values represent the motor speed in reverse.
 void setMotorSpeed(int motor1Speed, int motor2Speed) {
-  // remove comment if any of the motors are going in reverse
-  //  motor1Speed = -motor1Speed;
-  //  motor2Speed = -motor2Speed;
   if (motor1Speed == 0) {
     digitalWrite(m11Pin, LOW);
     digitalWrite(m12Pin, LOW);
@@ -138,8 +104,6 @@ void setMotorSpeed(int motor1Speed, int motor2Speed) {
   }
 }
 
-
-
 void debugging() {
   Serial.print("Error: ");
   Serial.println(error);
@@ -148,24 +112,21 @@ void debugging() {
 
   Serial.print("M2 speed: ");
   Serial.println(m2Speed);
-
-  // delay(250);
 }
 
 void customCalibrate() {
-  // calibrate the sensor. For maximum grade the line follower should do the movement itself, without human interaction.
   int ct = 0;
   int state = 0;
   while (ct <= 6) {
     qtr.calibrate();
     qtr.read(sensorValues);
-    if (state == 0) {   // going right
+    if (state == 0) {               // RIGHT
       if (sensorValues[0] < 700) {
         setMotorSpeed(70, -70);
       } else {
         state = 1;
       }
-    } if (state == 1) {   // going left
+    } if (state == 1) {             // LEFT
       if (sensorValues[5] < 700) {
         setMotorSpeed(-70, 70);
       } else {
@@ -176,7 +137,11 @@ void customCalibrate() {
   }
 }
 
-void pidControl(float error) {
+int pidControl(float error) {
+  p = error;
+  i = i + error;
+  d = error - lastError;
+
   if (error >= -20 && error < -10) {
     kd = 10;
   }
@@ -196,8 +161,23 @@ void pidControl(float error) {
     kd = -10;
   }
 
-  ki = 0.0045;  
+  ki = 0.005;
+
+  int motorSpeedDiff = kp * p + ki * i + kd * d;
+
+  return motorSpeedDiff;
 }
 
+void CalculateSpeed(float error, int motorSpeedDiff) {
+  m1Speed = baseSpeed;
+  m2Speed = baseSpeed;
 
+  if (error < 0) {
+    m1Speed += motorSpeedDiff;
+  } else if (error > 0) {
+    m2Speed -= motorSpeedDiff;
+  }
 
+  m1Speed = constrain(m1Speed, minSpeed, maxSpeed);
+  m2Speed = constrain(m2Speed, minSpeed, maxSpeed);
+}
