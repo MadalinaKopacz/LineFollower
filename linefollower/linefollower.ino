@@ -1,6 +1,7 @@
 #include <QTRSensors.h>
 #include <EEPROM.h>
 
+const int buttonPin = 2;
 const int m11Pin = 7;
 const int m12Pin = 6;
 const int m21Pin = 5;
@@ -48,11 +49,18 @@ const int sensorCount = 6;
 int sensorValues[sensorCount];
 int sensors[sensorCount] = { 0, 0, 0, 0, 0, 0 };
 const unsigned short int sensorAddress[] = { 0, 32, 64, 96, 128, 160 };
+byte buttonState = HIGH;
+bool buttonPressed = false;
+unsigned long lastDebounceTime = 0;
+unsigned int debounceDelay = 50;
+byte lastReading = LOW;
+byte reading = LOW;
 
 
 void setup() {
 
   // pinMode setup
+  pinMode(buttonPin, INPUT_PULLUP);
   pinMode(m11Pin, OUTPUT);
   pinMode(m12Pin, OUTPUT);
   pinMode(m21Pin, OUTPUT);
@@ -69,24 +77,25 @@ void setup() {
   Serial.begin(9600);
 
   digitalWrite(LED_BUILTIN, HIGH);
-  
+
   digitalWrite(ledPinLeft, leftLedState);
   digitalWrite(ledPinRight, rightLedState);
-  
-  customCalibrate();
+
+  getSensorsValues();
 
   digitalWrite(LED_BUILTIN, LOW);
   setMotorSpeed(0, 0);
-
 }
 
 void loop() {
+  debounce();
+
   blink(rightLedState, blinkStartRight);
   blink(leftLedState, blinkStartLeft);
-  
+
   digitalWrite(ledPinLeft, leftLedState);
-  digitalWrite(ledPinRight,  rightLedState);
-  
+  digitalWrite(ledPinRight, rightLedState);
+
   float error = map(qtr.readLineBlack(sensorValues), 0, 5000, -pThreshold, pThreshold);
 
   int motorSpeedDiff = pidControl(error);
@@ -148,13 +157,14 @@ void customCalibrate() {
   while (ct <= 6) {
     qtr.calibrate();
     qtr.read(sensorValues);
-    if (state == 0) {               // RIGHT
+    if (state == 0) {  // RIGHT
       if (sensorValues[0] < 700) {
         setMotorSpeed(70, -70);
       } else {
         state = 1;
       }
-    } if (state == 1) {             // LEFT
+    }
+    if (state == 1) {  // LEFT
       if (sensorValues[5] < 700) {
         setMotorSpeed(-70, 70);
       } else {
@@ -163,6 +173,8 @@ void customCalibrate() {
       }
     }
   }
+  // qtr.read(sensorValues);
+  putSensorsValues();
 }
 
 int pidControl(float error) {
@@ -177,7 +189,7 @@ int pidControl(float error) {
   // }
   // if (errorAbs >= 5 && errorAbs < 15) {
   //   kd = 40;
-  // }  
+  // }
   // if (errorAbs >= 15 && errorAbs < 20) {
   //   kd = 50;
   // }
@@ -204,19 +216,48 @@ void CalculateSpeed(float error, int motorSpeedDiff) {
 }
 
 void blink(byte &ledState, unsigned long &blinkStart) {
-  if(millis() - blinkStart >= blinkDuration) {
+  if (millis() - blinkStart >= blinkDuration) {
     ledState = !ledState;
     blinkStart = millis();
   }
 }
 
 void turn() {
-if(m1Speed < 0) {
-  blink(leftLedState, blinkStartLeft);
-  rightLedState = HIGH;
+  if (m1Speed < 0) {
+    blink(leftLedState, blinkStartLeft);
+    rightLedState = HIGH;
+  }
+  if (m2Speed < 0) {
+    blink(rightLedState, blinkStartRight);
+    leftLedState = HIGH;
+  }
 }
-if(m2Speed < 0){
-  blink(rightLedState, blinkStartRight);
-  leftLedState = HIGH;
+
+void getSensorsValues() {
+  for (int i = 0; i < 6; ++i) {
+    EEPROM.get(sensorAddress[i], sensorValues);
+  }
 }
+
+void putSensorsValues() {
+  for (int i = 0; i < 6; ++i) {
+    EEPROM.put(sensorAddress[i], sensorValues);
+  }
+}
+
+void debounce() {
+  reading = digitalRead(buttonPin);
+
+  if (reading != lastReading) {
+    lastDebounceTime = millis();
+  }
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    buttonState = reading;
+
+    if (buttonState == LOW && !buttonPressed) {
+      customCalibrate();
+      buttonPressed = true;
+    }
+  }
+  lastReading = reading;
 }
