@@ -47,8 +47,10 @@ unsigned long blinkStartRight = 0;
 
 const int sensorCount = 6;
 int sensorValues[sensorCount];
+int calibratedMinValues[sensorCount];
+int calibratedMaxValues[sensorCount];
 int sensors[sensorCount] = { 0, 0, 0, 0, 0, 0 };
-const unsigned short int sensorAddress[] = { 0, 32, 64, 96, 128, 160 };
+const unsigned short int sensorAddress[] = { 0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352 };
 byte buttonState = HIGH;
 bool buttonPressed = false;
 unsigned long lastDebounceTime = 0;
@@ -175,8 +177,7 @@ void customCalibrate() {
       }
     }
   }
-  // qtr.read(sensorValues);
-  putSensorsValues();
+    putSensorsValues();
 }
 
 int pidControl(float error) {
@@ -186,15 +187,12 @@ int pidControl(float error) {
   i = i + error;
   d = error - lastError;
 
-if (errorAbs >= 0 && errorAbs < 5) {
-    kd = 9;
-  }    
-  if (errorAbs >= 5 && errorAbs < 10) {
-    kd = 7;
-  } 
-  if (errorAbs >= 10 && errorAbs < 15) {
-    kd = 5;
-  } 
+  if (errorAbs >= 0 && errorAbs < 5) {
+    kd = 3;
+  }
+  if (errorAbs >= 5 && errorAbs < 15) {
+    kd = 7.5;
+  }
   if (errorAbs >= 15 && errorAbs < 20) {
     kd = 3.5;
   } 
@@ -288,18 +286,33 @@ void turn() {
 }
 
 void getSensorsValues() {
-    Serial.println("from eeprom");
-  for (int i = 0; i < 6; ++i) {
-    EEPROM.get(sensorAddress[i], sensorValues[i]);
-    Serial.println(sensorValues[i]);
+  if (qtr.calibrationOn.initialized) {
+    return;
   }
+  uint16_t *oldMaximum = qtr.calibrationOn.maximum;
+  qtr.calibrationOn.maximum = (uint16_t *)realloc(qtr.calibrationOn.maximum, sizeof(uint16_t) * sensorCount);
+  if (qtr.calibrationOn.maximum == nullptr) {
+    free(oldMaximum);
+    return;
+  }
+
+  uint16_t *oldMinimum = qtr.calibrationOn.minimum;
+  qtr.calibrationOn.minimum = (uint16_t *)realloc(qtr.calibrationOn.minimum, sizeof(uint16_t) * sensorCount);
+  if (qtr.calibrationOn.minimum == nullptr) {
+    free(oldMinimum);
+    return;
+  }
+  for (int i = 0; i < 6; i++) {
+    EEPROM.get(sensorAddress[i * 2], qtr.calibrationOn.minimum[i]);
+    EEPROM.get(sensorAddress[i * 2 + 1], qtr.calibrationOn.maximum[i]);
+  }
+  qtr.calibrationOn.initialized = true;
 }
 
 void putSensorsValues() {
-    Serial.println("to eeprom");
-  for (int i = 0; i < 6; ++i) {
-    EEPROM.put(sensorAddress[i], sensorValues[i]);
-    Serial.println(sensorValues[i]);
+  for (int i = 0; i < 6; i++) {
+    EEPROM.put(sensorAddress[i * 2], qtr.calibrationOn.minimum[i]);
+    EEPROM.put(sensorAddress[i * 2 + 1], qtr.calibrationOn.maximum[i]);
   }
 }
 
