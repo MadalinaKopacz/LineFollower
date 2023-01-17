@@ -25,12 +25,12 @@ float d = 0;
 float error = 0;
 float lastError = 0;
 
-float pThreshold = 30;
+float pThreshold = 20;
 
 const int maxSpeed = 255;
 const int minSpeed = -255;
 
-const int baseSpeed = 255;
+const int baseSpeed = 200;
 
 const int calibrateSpeed = 50;
 const unsigned long calibrateTime = 250;
@@ -81,7 +81,8 @@ void setup() {
   digitalWrite(ledPinLeft, leftLedState);
   digitalWrite(ledPinRight, rightLedState);
 
-  getSensorsValues();
+  // getSensorsValues();
+  customCalibrate();
 
   digitalWrite(LED_BUILTIN, LOW);
   setMotorSpeed(0, 0);
@@ -152,6 +153,7 @@ void debugging() {
 }
 
 void customCalibrate() {
+  Serial.println("Calibrating...");
   int ct = 0;
   int state = 0;
   while (ct <= 6) {
@@ -173,7 +175,7 @@ void customCalibrate() {
       }
     }
   }
-  qtr.read(sensorValues);
+  // qtr.read(sensorValues);
   putSensorsValues();
 }
 
@@ -185,13 +187,13 @@ int pidControl(float error) {
   d = error - lastError;
 
   if (errorAbs >= 0 && errorAbs < 5) {
-    kd = 2;
+    kd = 3;
   }
   if (errorAbs >= 5 && errorAbs < 15) {
-    kd = 4;
+    kd = 7.5;
   }  
   if (errorAbs >= 15 && errorAbs < 20) {
-    kd = 6;
+    kd = 710;
   }
   // kd = 0;
   ki = 0.005;
@@ -234,14 +236,18 @@ void turn() {
 }
 
 void getSensorsValues() {
+    Serial.println("from eeprom");
   for (int i = 0; i < 6; ++i) {
     EEPROM.get(sensorAddress[i], sensorValues[i]);
+    Serial.println(sensorValues[i]);
   }
 }
 
 void putSensorsValues() {
+    Serial.println("to eeprom");
   for (int i = 0; i < 6; ++i) {
     EEPROM.put(sensorAddress[i], sensorValues[i]);
+    Serial.println(sensorValues[i]);
   }
 }
 
