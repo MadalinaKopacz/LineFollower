@@ -41,4 +41,4 @@ Our best time during the evaluation was 19.53 seconds.
 
 
 ### 🎞️ Video presenting the functionality
-The video can be found [here]().
+The video can be found [here](https://youtu.be/is72HECPIz4).
