@@ -7,8 +7,14 @@ Introduction to Robotics laboratory project, taken in the 3rd year at the **Facu
 <h2> 🏎️ Line follower </h2>
 
 ### 📜 Task Requirements
+We assembled the line follower kit that we received from the laboratory. Also, we needed to program it and find the PID values that will help us complete the course in less than 20 seconds. Moreover, we implemented an algorithm for self-calibration, find a name for the robot and if we wanted to we could stylize it in different ways.
+
+Our team name is the same as the line follower's name and it's Bârlad. This name derived from a joke made during one of our lectures. 
+Our best time during the evaluation was 19.53 seconds.
+For styling, we used two blinking LEDs. 
 
 #### Components
+The linefollower kit contained:
 - chassis
 - Arduino Uno Board
 - 2 DC motors
@@ -19,15 +25,14 @@ Introduction to Robotics laboratory project, taken in the 3rd year at the **Facu
 - 2 LEDs
 - resistors
 - wires per logic
-- QTR sensor
+- 6 sensors from a QTR-8A sensor bar
 - zip ties
 - nuts and bolts
 
 #### Description
-This is a robot that follows a line using QTR sensors and PID.
+This is a robot that follows a line using 6 sensors from a QTR-8A sensor bar and a PID algorithm.
 It self calibrates and we save the calibration in EEPROM so we do not have to redo the calibration every single time. 
-The PID algorithm processes the values from multiple ranges registered by the sensors and passes the new numbers to the motors. 
-Our best time during the evaluation was 19.53 seconds.
+The PID algorithm processes the values from multiple ranges registered by the sensors and passes the new numbers to the motors. The final PID values were empirically found and we also used the I value for bringing some smoothiness for the line follower.
 
 ### 🖼️ Picture of the setup
 - [Front View](https://user-images.githubusercontent.com/79279298/213772474-32a97111-9bc8-494f-b590-7363ef177b95.jpeg)
@@ -42,3 +47,6 @@ Our best time during the evaluation was 19.53 seconds.
 
 ### 🎞️ Video presenting the functionality
 The video can be found [here](https://youtu.be/is72HECPIz4).
+
+
+### 🔗 Team mate's link: https://github.com/AlinaGeo/Line-Follower
